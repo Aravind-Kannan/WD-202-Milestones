@@ -17,11 +17,6 @@ class UserLoginView(LoginView):
     template_name = "user/login.html"
 
 
-# * Traditional Logout Page: Logging off the app
-class UserLogoutView(LogoutView):
-    success_url = "user/login.html"
-
-
 # * Traditional Signup Page: Form consists of `username`, `password` and `confirm password` to create a new user in the `task_manager`
 class UserCreateView(CreateView):
     form_class = UserCreationForm
