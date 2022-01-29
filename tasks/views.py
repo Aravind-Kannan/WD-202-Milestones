@@ -38,6 +38,7 @@ class AuthorisedTaskManager(LoginRequiredMixin):
 
 
 # * Task Counter: Creates context variables and count the completed tasks in `count_completed` and total number of tasks in `count_total`
+# ? Refer: https://docs.djangoproject.com/en/4.0/ref/class-based-views/generic-display/
 class TaskCounterMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
