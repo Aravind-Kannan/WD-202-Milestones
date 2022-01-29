@@ -81,14 +81,20 @@ class GenericTaskCreateView(CreateView):
 
         conflicting_priority = form.cleaned_data["priority"]
         task = Task.objects.filter(
-            deleted=False, user=self.request.user, priority=conflicting_priority
+            deleted=False,
+            completed=False,
+            user=self.request.user,
+            priority=conflicting_priority,
         )
 
         # Find the last cascading priority that conflicts
         while task.exists():
             conflicting_priority += 1
             task = Task.objects.filter(
-                deleted=False, user=self.request.user, priority=conflicting_priority
+                deleted=False,
+                completed=False,
+                user=self.request.user,
+                priority=conflicting_priority,
             )
 
         print(
@@ -100,6 +106,7 @@ class GenericTaskCreateView(CreateView):
 
         tasks = Task.objects.select_for_update().filter(
             deleted=False,
+            completed=False,
             user=self.request.user,
             priority__in=list(
                 range(form.cleaned_data["priority"], conflicting_priority)
@@ -155,17 +162,29 @@ class GenericTaskUpdateView(AuthorisedTaskManager, UpdateView):
     # ? Refer: https://docs.djangoproject.com/en/4.0/ref/forms/api/#django.forms.Form.has_changed
     def form_valid(self, form):
         """If the form is valid, save the associated model."""
-        if form.has_changed() and "priority" in form.changed_data:
+        if form.has_changed() and (
+            "priority" in form.changed_data
+            or (
+                "completed" in form.changed_data
+                and form.cleaned_data["completed"] == False
+            )
+        ):
             conflicting_priority = form.cleaned_data["priority"]
             task = Task.objects.filter(
-                deleted=False, user=self.request.user, priority=conflicting_priority
+                deleted=False,
+                completed=False,
+                user=self.request.user,
+                priority=conflicting_priority,
             )
 
             # Find the last cascading priority that conflicts
             while task.exists():
                 conflicting_priority += 1
                 task = Task.objects.filter(
-                    deleted=False, user=self.request.user, priority=conflicting_priority
+                    deleted=False,
+                    completed=False,
+                    user=self.request.user,
+                    priority=conflicting_priority,
                 )
 
             print(
@@ -177,6 +196,7 @@ class GenericTaskUpdateView(AuthorisedTaskManager, UpdateView):
 
             tasks = Task.objects.select_for_update().filter(
                 deleted=False,
+                completed=False,
                 user=self.request.user,
                 priority__in=list(
                     range(form.cleaned_data["priority"], conflicting_priority)
