@@ -54,6 +54,28 @@ class TaskCounterMixin:
         return context
 
 
+# * Priority Casacade Logic (Database Transaction Function): Lifted up for model logic in `GenericTaskCreateView` and `GenericTaskUpdateView`
+def priorityCascadeLogic(form, user):
+    conflicting_priority = form.cleaned_data["priority"]
+    tasks = list()
+    while True:
+        # ? Refer: https://docs.djangoproject.com/en/4.0/ref/models/querysets/#get
+        try:
+            task = Task.objects.select_for_update().get(
+                deleted=False,
+                completed=False,
+                user=user,
+                priority=conflicting_priority,
+            )
+            conflicting_priority += 1
+            task.priority += 1
+            tasks.append(task)
+        except:
+            break
+    with transaction.atomic():
+        Task.objects.bulk_update(tasks, ["priority"])
+
+
 # ! Task Views
 # * Task Create Form: Customizing contents of `ModelForm`
 class TaskCreateForm(ModelForm):
@@ -82,31 +104,7 @@ class GenericTaskCreateView(CreateView):
     # * Priority Casacade Logic: For new `Task` object - run everytime
     def form_valid(self, form):
         """If the form is valid, save the associated model."""
-
-        conflicting_priority = form.cleaned_data["priority"]
-
-        # Find the last cascading priority that conflicts
-        while Task.objects.filter(
-            deleted=False,
-            completed=False,
-            user=self.request.user,
-            priority=conflicting_priority,
-        ).exists():
-            conflicting_priority += 1
-
-        tasks = Task.objects.select_for_update().filter(
-            deleted=False,
-            completed=False,
-            user=self.request.user,
-            priority__in=list(
-                range(form.cleaned_data["priority"], conflicting_priority)
-            ),
-        )
-
-        with transaction.atomic():
-            for task in tasks:
-                task.priority += 1
-            Task.objects.bulk_update(tasks, ["priority"])
+        priorityCascadeLogic(form, self.request.user)
 
         # * Save newly created object
         self.object = form.save()
@@ -134,38 +132,7 @@ class GenericTaskUpdateView(AuthorisedTaskManager, UpdateView):
                 and form.cleaned_data["completed"] == False
             )
         ):
-            conflicting_priority = form.cleaned_data["priority"]
-
-            # Find the last cascading priority that conflicts
-            while Task.objects.filter(
-                deleted=False,
-                completed=False,
-                user=self.request.user,
-                priority=conflicting_priority,
-            ).exists():
-                conflicting_priority += 1
-
-            print(
-                "Conflict - starts:",
-                form.cleaned_data["priority"],
-                "ends: ",
-                conflicting_priority,
-            )
-
-            tasks = Task.objects.select_for_update().filter(
-                deleted=False,
-                completed=False,
-                user=self.request.user,
-                priority__in=list(
-                    range(form.cleaned_data["priority"], conflicting_priority)
-                ),
-            )
-            print("Conflicting tasks: ", tasks)
-
-            with transaction.atomic():
-                for task in tasks:
-                    task.priority += 1
-                Task.objects.bulk_update(tasks, ["priority"])
+            priorityCascadeLogic(form, self.request.user)
 
         # * Save updated object
         self.object = form.save()
