@@ -80,22 +80,15 @@ class GenericTaskCreateView(CreateView):
         """If the form is valid, save the associated model."""
 
         conflicting_priority = form.cleaned_data["priority"]
-        task = Task.objects.filter(
+
+        # Find the last cascading priority that conflicts
+        while Task.objects.filter(
             deleted=False,
             completed=False,
             user=self.request.user,
             priority=conflicting_priority,
-        )
-
-        # Find the last cascading priority that conflicts
-        while task.exists():
+        ).exists():
             conflicting_priority += 1
-            task = Task.objects.filter(
-                deleted=False,
-                completed=False,
-                user=self.request.user,
-                priority=conflicting_priority,
-            )
 
         print(
             "Conflict - starts:",
@@ -170,22 +163,15 @@ class GenericTaskUpdateView(AuthorisedTaskManager, UpdateView):
             )
         ):
             conflicting_priority = form.cleaned_data["priority"]
-            task = Task.objects.filter(
+
+            # Find the last cascading priority that conflicts
+            while Task.objects.filter(
                 deleted=False,
                 completed=False,
                 user=self.request.user,
                 priority=conflicting_priority,
-            )
-
-            # Find the last cascading priority that conflicts
-            while task.exists():
+            ).exists():
                 conflicting_priority += 1
-                task = Task.objects.filter(
-                    deleted=False,
-                    completed=False,
-                    user=self.request.user,
-                    priority=conflicting_priority,
-                )
 
             print(
                 "Conflict - starts:",
