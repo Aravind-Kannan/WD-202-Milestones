@@ -43,9 +43,11 @@ class TaskCounterMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["count_completed"] = Task.objects.filter(
-            completed=True, deleted=False
+            completed=True, deleted=False, user=self.request.user
         ).count()
-        context["count_total"] = Task.objects.filter(deleted=False).count()
+        context["count_total"] = Task.objects.filter(
+            deleted=False, user=self.request.user
+        ).count()
         return context
 
 
@@ -108,6 +110,11 @@ class GenericPendingTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
     # * Pagination Feature using `paginator`
     paginate_by = 5
 
+    def get_queryset(self):
+        return Task.objects.filter(
+            completed=False, deleted=False, user=self.request.user
+        ).order_by("-priority")
+
     # * Search Feature: Find pending `Task` with matching case-insensitive `title` attribute
     # def get_queryset(self):
     #     search_term = self.request.GET.get("search")
@@ -148,6 +155,11 @@ class GenericAllTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
     # * Pagination Feature using `paginator`
     paginate_by = 5
 
+    def get_queryset(self):
+        return Task.objects.filter(deleted=False, user=self.request.user).order_by(
+            "-priority"
+        )
+
 
 # * List Completed Tasks Page: `ListView` of all completed `Task` records available in the database
 class GenericCompletedTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
@@ -156,3 +168,8 @@ class GenericCompletedTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
     context_object_name = "tasks"
     # * Pagination Feature using `paginator`
     paginate_by = 5
+
+    def get_queryset(self):
+        return Task.objects.filter(
+            completed=True, deleted=False, user=self.request.user
+        ).order_by("-priority")
