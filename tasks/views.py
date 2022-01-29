@@ -1,6 +1,7 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
+from django.db import transaction
 from django.forms import ModelForm, ValidationError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
@@ -37,7 +38,7 @@ class AuthorisedTaskManager(LoginRequiredMixin):
         return Task.objects.filter(deleted=False, user=self.request.user)
 
 
-# * Task Counter: Creates context variables and count the completed tasks in `count_completed` and total number of tasks in `count_total`
+# * Task Counter (Mixin): Creates context variables and count the completed tasks in `count_completed` and total number of tasks in `count_total`
 # ? Refer: https://docs.djangoproject.com/en/4.0/ref/class-based-views/generic-display/
 class TaskCounterMixin:
     def get_context_data(self, **kwargs):
@@ -74,25 +75,42 @@ class GenericTaskCreateView(CreateView):
     template_name = "task/create.html"
     success_url = "/tasks"
 
-    # ? Overriding
-    # * Associate `User` with `Task`: After storing contents of `form`, before `success_url`
+    # * Priority Casacade Logic: For new `Task` object - run everytime
     def form_valid(self, form):
         """If the form is valid, save the associated model."""
 
-        conflict = form.cleaned_data["priority"]
-        task = Task.objects.filter(deleted=False, priority=conflict)
-        print("Before Loop:", task)
-        while task.exists():
-            conflict += 1
-            task = Task.objects.filter(deleted=False, priority=conflict)
-            print("Conflict:", conflict)
-            print("Task:", task)
-        print(form.cleaned_data["priority"], conflict)
+        conflicting_priority = form.cleaned_data["priority"]
+        task = Task.objects.filter(
+            deleted=False, user=self.request.user, priority=conflicting_priority
+        )
 
-        for i in range(conflict, form.cleaned_data["priority"], -1):
-            task = Task.objects.filter(deleted=False, priority=i - 1)
-            print(task)
-            task.update(priority=i)
+        # Find the last cascading priority that conflicts
+        while task.exists():
+            conflicting_priority += 1
+            task = Task.objects.filter(
+                deleted=False, user=self.request.user, priority=conflicting_priority
+            )
+
+        print(
+            "Conflict - starts:",
+            form.cleaned_data["priority"],
+            "ends: ",
+            conflicting_priority,
+        )
+
+        tasks = Task.objects.select_for_update().filter(
+            deleted=False,
+            user=self.request.user,
+            priority__in=list(
+                range(form.cleaned_data["priority"], conflicting_priority)
+            ),
+        )
+        print("Conflicting tasks: ", tasks)
+
+        with transaction.atomic():
+            for task in tasks:
+                task.priority += 1
+            Task.objects.bulk_update(tasks, ["priority"])
 
         # * Save newly created object
         self.object = form.save()
@@ -128,10 +146,55 @@ class GenericPendingTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
 
 # * Update Task Page: Form consisting of `Task` attributes with their pre-existing data
 class GenericTaskUpdateView(AuthorisedTaskManager, UpdateView):
-    model = Task
     form_class = TaskCreateForm
     template_name = "task/update.html"
     success_url = "/all-tasks"
+
+    # * Priority Casacade Logic: For `Task` object that changes `priority`, run only once
+    # * TO find if it has changed, we use `Form.has_changed()` and `Form.changed_data`
+    # ? Refer: https://docs.djangoproject.com/en/4.0/ref/forms/api/#django.forms.Form.has_changed
+    def form_valid(self, form):
+        """If the form is valid, save the associated model."""
+        if form.has_changed() and "priority" in form.changed_data:
+            conflicting_priority = form.cleaned_data["priority"]
+            task = Task.objects.filter(
+                deleted=False, user=self.request.user, priority=conflicting_priority
+            )
+
+            # Find the last cascading priority that conflicts
+            while task.exists():
+                conflicting_priority += 1
+                task = Task.objects.filter(
+                    deleted=False, user=self.request.user, priority=conflicting_priority
+                )
+
+            print(
+                "Conflict - starts:",
+                form.cleaned_data["priority"],
+                "ends: ",
+                conflicting_priority,
+            )
+
+            tasks = Task.objects.select_for_update().filter(
+                deleted=False,
+                user=self.request.user,
+                priority__in=list(
+                    range(form.cleaned_data["priority"], conflicting_priority)
+                ),
+            )
+            print("Conflicting tasks: ", tasks)
+
+            with transaction.atomic():
+                for task in tasks:
+                    task.priority += 1
+                Task.objects.bulk_update(tasks, ["priority"])
+
+        # * Save updated object
+        self.object = form.save()
+        self.object.user = self.request.user
+        self.object.save()
+
+        return HttpResponseRedirect(self.get_success_url())
 
 
 # * Delete Task Page: Form consists of `confirm`ation button with POST to be a safe-method as soft-deletion of `Task` causes side-effect
