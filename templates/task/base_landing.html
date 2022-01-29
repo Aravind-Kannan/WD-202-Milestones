@@ -1,0 +1,67 @@
+{% extends "../base.html" %}
+{% load myfilters %}
+
+{% block content %}
+
+<div class="flex justify-between">
+  <h1 class="my-5 mx-5 text-4xl font-bold">Hi {{ request.user }}</h1>
+  <a class="self-center border-2 rounded-xl border-indigo-600 text-indigo-600 py-2 px-3" href="/user/logout">Log Out</a>
+</div>
+
+<div class="flex justify-around items-center">
+  {% block pane %} {% endblock %}
+</div>
+
+<ol>
+  {% for task in tasks %}
+  <li class="grid grid-cols-6 m-3 p-4 rounded-2xl bg-slate-100">
+    <!-- <a href="/complete_task/{{task.id}}/">Complete</a> -->
+    <!-- {{task.completed}} -->
+    <a class="col-span-4" href="/detail-task/{{task.id}}/">
+        {% block taskCard %}
+            <div>{{ task.title }}</div>
+            <!-- ? Refer Date Formatting: https://docs.djangoproject.com/en/4.0/ref/templates/builtins/#date -->
+            <div class="flex flex-row text-sm ">
+              <div class="text-slate-500">{{ task.created_date|date:"D d M" }}</div>
+              <p class="ml-2 px-2 rounded-xl bg-blue-300 text-blue-500">Priority: {{task.priority}}</p>
+            </div>
+        {% endblock %}      
+    </a>
+    
+    <a class="bg-green-500 hover:bg-green-600 p-4 rounded-xl self-center justify-self-center" href="/update-task/{{task.id}}/">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14.1667 2.5C14.3856 2.28113 14.6455 2.10752 14.9314 1.98906C15.2174 1.87061 15.5239 1.80965 15.8334 1.80965C16.1429 1.80965 16.4494 1.87061 16.7354 1.98906C17.0214 2.10752 17.2812 2.28113 17.5001 2.5C17.719 2.71887 17.8926 2.97871 18.011 3.26468C18.1295 3.55064 18.1904 3.85714 18.1904 4.16667C18.1904 4.4762 18.1295 4.7827 18.011 5.06866C17.8926 5.35463 17.719 5.61447 17.5001 5.83334L6.25008 17.0833L1.66675 18.3333L2.91675 13.75L14.1667 2.5Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>        
+    </a>
+    <a class="bg-red-500 hover:bg-red-600 p-4 rounded-xl self-center justify-self-center" href="/delete-task/{{task.id}}/">
+      <svg width="14" height="20" viewBox="0 0 14 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.66675 5V3.33333C3.66675 2.89131 3.84234 2.46738 4.1549 2.15482C4.46746 1.84226 4.89139 1.66667 5.33342 1.66667H8.66675C9.10878 1.66667 9.5327 1.84226 9.84526 2.15482C10.1578 2.46738 10.3334 2.89131 10.3334 3.33333V5M12.8334 5V16.6667C12.8334 17.1087 12.6578 17.5326 12.3453 17.8452C12.0327 18.1577 11.6088 18.3333 11.1667 18.3333H2.83341C2.39139 18.3333 1.96746 18.1577 1.6549 17.8452C1.34234 17.5326 1.16675 17.1087 1.16675 16.6667V5H12.8334Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>        
+    </a>
+  </li>
+  {% endfor %}
+</ol>
+
+<!-- * Pagination Feature: Using 'page_obj' to navigate through different pages -->
+<!-- ? Refer Code Snippet: https://docs.djangoproject.com/en/4.0/topics/pagination/#paginating-a-listview -->
+<div class="flex flex-row gap-1 m-2 text-white text-center">
+    {% if page_obj.has_previous %}
+        <a class="basis-1/6 p-2 bg-blue-500 hover:bg-blue-600 rounded-xl" href="?page=1">&laquo;</a>
+        <a class="basis-1/6 p-2 bg-blue-500 hover:bg-blue-600 rounded-xl" href="?page={{ page_obj.previous_page_number }}">&#60;</a>
+    {% endif %}
+
+    <span class="grow p-2 bg-blue-600 rounded-xl">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+        <a class="basis-1/6 p-2 bg-blue-500 hover:bg-blue-600 rounded-xl" href="?page={{ page_obj.next_page_number }}">&#62;</a>
+        <a class="basis-1/6 p-2 bg-blue-500 hover:bg-blue-600 rounded-xl" href="?page={{ page_obj.paginator.num_pages }}">&raquo;</a>
+    {% endif %}
+</div>
+
+<form action="/create-task">
+  <button class="text-white bg-red-500 hover:bg-red-600 rounded-xl w-full p-3" action="submit">Add a Task</button>
+</form>
+
+{% endblock %}
