@@ -12,7 +12,7 @@ from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
 from tasks.models import Task
 
-
+# ! User Views
 # * Traditional Login Page: Form consists of `username` and `password` to authenticate into the `task_manager`
 class UserLoginView(LoginView):
     template_name = "user/login.html"
@@ -25,6 +25,7 @@ class UserCreateView(CreateView):
     success_url = "/user/login"
 
 
+# ! Additional Views
 # * Learning Cookies: Simple view counter tied with each session
 def session_storage_view(request):
     total_views = request.session.get("total_views", 0)
@@ -32,6 +33,7 @@ def session_storage_view(request):
     return HttpResponse(f"Total views is {total_views} and user is {request.user}")
 
 
+# ! Pre-requisite Mixins
 # * Authorisation (Combined Mixin): To allow access only to users who are 'logged in' and allow them only to view their respective 'tasks'
 class AuthorisedTaskManager(LoginRequiredMixin):
     def get_queryset(self):
@@ -52,6 +54,7 @@ class TaskCounterMixin:
         return context
 
 
+# ! Task Views
 # * Task Create Form: Customizing contents of `ModelForm`
 class TaskCreateForm(ModelForm):
 
@@ -69,6 +72,7 @@ class TaskCreateForm(ModelForm):
         fields = ["title", "description", "completed", "priority"]
 
 
+# ! CRUD with Task Model
 # * Create Task Page: Form consisting of `Task` attributes to create a new record in the database
 class GenericTaskCreateView(CreateView):
     form_class = TaskCreateForm
@@ -90,13 +94,6 @@ class GenericTaskCreateView(CreateView):
         ).exists():
             conflicting_priority += 1
 
-        print(
-            "Conflict - starts:",
-            form.cleaned_data["priority"],
-            "ends: ",
-            conflicting_priority,
-        )
-
         tasks = Task.objects.select_for_update().filter(
             deleted=False,
             completed=False,
@@ -105,7 +102,6 @@ class GenericTaskCreateView(CreateView):
                 range(form.cleaned_data["priority"], conflicting_priority)
             ),
         )
-        print("Conflicting tasks: ", tasks)
 
         with transaction.atomic():
             for task in tasks:
@@ -118,30 +114,6 @@ class GenericTaskCreateView(CreateView):
         self.object.save()
 
         return HttpResponseRedirect(self.get_success_url())
-
-
-# * List Pending Tasks Page: `ListView` of all pending `Task` records available in the database
-class GenericPendingTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
-    queryset = Task.objects.filter(completed=False, deleted=False).order_by("-priority")
-    template_name = "task/tasks.html"
-    context_object_name = "tasks"
-    # * Pagination Feature using `paginator`
-    paginate_by = 5
-
-    def get_queryset(self):
-        return Task.objects.filter(
-            completed=False, deleted=False, user=self.request.user
-        ).order_by("priority")
-
-    # * Search Feature: Find pending `Task` with matching case-insensitive `title` attribute
-    # def get_queryset(self):
-    #     search_term = self.request.GET.get("search")
-    #     tasks = Task.objects.filter(
-    #         completed=False, deleted=False, user=self.request.user
-    #     )
-    #     if search_term:
-    #         tasks = tasks.filter(title__icontains=search_term)
-    #     return tasks.order_by("-priority")
 
 
 # * Update Task Page: Form consisting of `Task` attributes with their pre-existing data
@@ -214,6 +186,21 @@ class GenericTaskDeleteView(AuthorisedTaskManager, DeleteView):
 class GenericTaskDetailView(AuthorisedTaskManager, DetailView):
     model = Task
     template_name = "task/detail.html"
+
+
+# ! Landing
+# * List Pending Tasks Page: `ListView` of all pending `Task` records available in the database
+class GenericPendingTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
+    queryset = Task.objects.filter(completed=False, deleted=False).order_by("-priority")
+    template_name = "task/tasks.html"
+    context_object_name = "tasks"
+    # * Pagination Feature using `paginator`
+    paginate_by = 5
+
+    def get_queryset(self):
+        return Task.objects.filter(
+            completed=False, deleted=False, user=self.request.user
+        ).order_by("priority")
 
 
 # * List All Tasks Page: `ListView` of all `Task` records available in the database
