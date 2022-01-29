@@ -113,7 +113,7 @@ class GenericPendingTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
     def get_queryset(self):
         return Task.objects.filter(
             completed=False, deleted=False, user=self.request.user
-        ).order_by("-priority")
+        ).order_by("priority")
 
     # * Search Feature: Find pending `Task` with matching case-insensitive `title` attribute
     # def get_queryset(self):
@@ -157,7 +157,7 @@ class GenericAllTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return Task.objects.filter(deleted=False, user=self.request.user).order_by(
-            "-priority"
+            "priority"
         )
 
 
@@ -172,4 +172,4 @@ class GenericCompletedTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
     def get_queryset(self):
         return Task.objects.filter(
             completed=True, deleted=False, user=self.request.user
-        ).order_by("-priority")
+        ).order_by("priority")
