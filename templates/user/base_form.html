@@ -28,7 +28,7 @@
   {% endfor %}
   
   {% csrf_token %}
-  <button class="text-white bg-red-500 rounded-xl w-full p-3" type="submit">{% block buttonContents %} {% endblock %}</button>
+  <button class="text-white bg-red-500 hover:bg-red-600 rounded-xl w-full p-3" type="submit">{% block buttonContents %} {% endblock %}</button>
 </form>
 
 <!-- Custom styling for 'help_text' -->
