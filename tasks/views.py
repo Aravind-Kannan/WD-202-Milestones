@@ -139,51 +139,6 @@ class GenericTaskDetailView(AuthorisedTaskManager, DetailView):
     template_name = "task/detail.html"
 
 
-# class TaskView(View):
-#     def get(self, request):
-#         search_term = request.GET.get("search")
-#         tasks = Task.objects.filter(completed=False).filter(deleted=False)
-#         if search_term:
-#             tasks = tasks.filter(title__icontains=search_term)
-#         return render(request, "tasks.html", {"tasks": tasks})
-
-#     def post(self, request):
-#         pass
-
-
-# class CreateTaskView(View):
-#     def get(self, request):
-#         return render(request, "task_create.html")
-
-#     def post(self, request):
-#         task_value = request.POST.get("task")
-#         task_obj = Task(title=task_value)
-#         task_obj.save()
-#         return HttpResponseRedirect("/tasks")
-
-
-# def tasks_view(request):
-#     search_term = request.GET.get("search")
-#     tasks = Task.objects.filter(completed=False).filter(deleted=False)
-#     if search_term:
-#         tasks = tasks.filter(title__icontains=search_term)
-#     return render(request, "tasks.html", {"tasks": tasks})
-
-
-# def add_task_view(request):
-#     task_value = request.GET.get("task")
-#     task_obj = Task(title=task_value)
-#     task_obj.save()
-#     return HttpResponseRedirect("/tasks")
-
-
-# def delete_task_view(request, index):
-#     # Task.object.filter(id=index).delete()
-
-#     # Soft Deletion
-#     Task.objects.filter(id=index).update(deleted=True)
-#     return HttpResponseRedirect("/tasks")
-
 # * List All Tasks Page: `ListView` of all `Task` records available in the database
 class GenericAllTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
     queryset = Task.objects.filter(deleted=False).order_by("-priority")
@@ -200,21 +155,3 @@ class GenericCompletedTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
     context_object_name = "tasks"
     # * Pagination Feature using `paginator`
     paginate_by = 5
-
-
-# def complete_task_view(request, index):
-#     Task.objects.filter(id=index).update(completed=True)
-#     return HttpResponseRedirect("/tasks")
-
-
-# def completed_tasks_view(request):
-#     completed_tasks = Task.objects.filter(completed=True, deleted=False)
-#     return render(request, "task/completed.html", {"tasks": completed_tasks})
-
-
-# def all_tasks_view(request):
-#     tasks = Task.objects.filter(completed=False, deleted=False)
-#     completed_tasks = Task.objects.filter(completed=True, deleted=False)
-#     return render(
-#         request, "task/all.html", {"tasks": tasks, "completed_tasks": completed_tasks}
-#     )
