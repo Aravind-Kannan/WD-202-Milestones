@@ -8,6 +8,8 @@
   <a class="self-center border-2 rounded-xl border-indigo-600 text-indigo-600 py-2 px-3" href="/user/logout">Log Out</a>
 </div>
 
+<p class="my-5 mx-5 text-slate-500">{{ count_completed }} of {{ count_total}} tasks completed</p>
+
 <div class="flex justify-around items-center">
   {% block pane %} {% endblock %}
 </div>

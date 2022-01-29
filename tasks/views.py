@@ -37,6 +37,17 @@ class AuthorisedTaskManager(LoginRequiredMixin):
         return Task.objects.filter(deleted=False, user=self.request.user)
 
 
+# * Task Counter: Creates context variables and count the completed tasks in `count_completed` and total number of tasks in `count_total`
+class TaskCounterMixin:
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["count_completed"] = Task.objects.filter(
+            completed=True, deleted=False
+        ).count()
+        context["count_total"] = Task.objects.filter(deleted=False).count()
+        return context
+
+
 # * Task Create Form: Customizing contents of `ModelForm`
 class TaskCreateForm(ModelForm):
 
@@ -89,7 +100,7 @@ class GenericTaskCreateView(CreateView):
 
 
 # * List Pending Tasks Page: `ListView` of all pending `Task` records available in the database
-class GenericPendingTaskView(LoginRequiredMixin, ListView):
+class GenericPendingTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
     queryset = Task.objects.filter(completed=False, deleted=False).order_by("-priority")
     template_name = "task/tasks.html"
     context_object_name = "tasks"
@@ -174,7 +185,7 @@ class GenericTaskDetailView(AuthorisedTaskManager, DetailView):
 #     return HttpResponseRedirect("/tasks")
 
 # * List All Tasks Page: `ListView` of all `Task` records available in the database
-class GenericAllTaskView(LoginRequiredMixin, ListView):
+class GenericAllTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
     queryset = Task.objects.filter(deleted=False).order_by("-priority")
     template_name = "task/all.html"
     context_object_name = "tasks"
@@ -183,7 +194,7 @@ class GenericAllTaskView(LoginRequiredMixin, ListView):
 
 
 # * List Completed Tasks Page: `ListView` of all completed `Task` records available in the database
-class GenericCompletedTaskView(LoginRequiredMixin, ListView):
+class GenericCompletedTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
     queryset = Task.objects.filter(completed=True, deleted=False).order_by("-priority")
     template_name = "task/completed.html"
     context_object_name = "tasks"
