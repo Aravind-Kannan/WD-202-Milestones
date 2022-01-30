@@ -58,21 +58,21 @@ class TaskCounterMixin:
 def priorityCascadeLogic(form, user):
     conflicting_priority = form.cleaned_data["priority"]
     tasks = list()
-    while True:
-        # ? Refer: https://docs.djangoproject.com/en/4.0/ref/models/querysets/#get
-        try:
-            task = Task.objects.select_for_update().get(
-                deleted=False,
-                completed=False,
-                user=user,
-                priority=conflicting_priority,
-            )
-            conflicting_priority += 1
-            task.priority += 1
-            tasks.append(task)
-        except:
-            break
     with transaction.atomic():
+        while True:
+            # ? Refer: https://docs.djangoproject.com/en/4.0/ref/models/querysets/#get
+            try:
+                task = Task.objects.select_for_update().get(
+                    deleted=False,
+                    completed=False,
+                    user=user,
+                    priority=conflicting_priority,
+                )
+                conflicting_priority += 1
+                task.priority += 1
+                tasks.append(task)
+            except:
+                break
         Task.objects.bulk_update(tasks, ["priority"])
 
 
@@ -104,7 +104,8 @@ class GenericTaskCreateView(CreateView):
     # * Priority Casacade Logic: For new `Task` object - run everytime
     def form_valid(self, form):
         """If the form is valid, save the associated model."""
-        priorityCascadeLogic(form, self.request.user)
+        if form.cleaned_data["completed"] == False:
+            priorityCascadeLogic(form, self.request.user)
 
         # * Save newly created object
         self.object = form.save()
@@ -136,8 +137,6 @@ class GenericTaskUpdateView(AuthorisedTaskManager, UpdateView):
 
         # * Save updated object
         self.object = form.save()
-        self.object.user = self.request.user
-        self.object.save()
 
         return HttpResponseRedirect(self.get_success_url())
 
