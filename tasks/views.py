@@ -13,16 +13,16 @@ from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from tasks.models import Task
 
 # ! User Views
-# * Traditional Login Page: Form consists of `username` and `password` to authenticate into the `task_manager`
-class UserLoginView(LoginView):
-    template_name = "user/login.html"
-
-
 # * Traditional Signup Page: Form consists of `username`, `password` and `confirm password` to create a new user in the `task_manager`
 class UserCreateView(CreateView):
     form_class = UserCreationForm
     template_name = "user/signup.html"
     success_url = "/user/login"
+
+
+# * Traditional Login Page: Form consists of `username` and `password` to authenticate into the `task_manager`
+class UserLoginView(LoginView):
+    template_name = "user/login.html"
 
 
 # ! Additional Views
@@ -33,7 +33,7 @@ def session_storage_view(request):
     return HttpResponse(f"Total views is {total_views} and user is {request.user}")
 
 
-# ! Pre-requisite Mixins
+# ! Pre-requisite Mixins and functions
 # * Authorisation (Combined Mixin): To allow access only to users who are 'logged in' and allow them only to view their respective 'tasks'
 class AuthorisedTaskManager(LoginRequiredMixin):
     def get_queryset(self):
