@@ -2,6 +2,11 @@ from django.db import models
 
 from django.contrib.auth.models import User
 
+# For signals
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+
+
 STATUS_CHOICES = (
     ("PENDING", "PENDING"),
     ("IN_PROGRESS", "IN_PROGRESS"),
@@ -24,3 +29,27 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class TaskHistory(models.Model):
+    old_status = models.CharField(
+        max_length=100, choices=STATUS_CHOICES, default=STATUS_CHOICES[0][0]
+    )
+    new_status = models.CharField(
+        max_length=100, choices=STATUS_CHOICES, default=STATUS_CHOICES[0][0]
+    )
+    updated_date = models.DateTimeField(auto_now=True)
+    # Rethink null and blank
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, null=True, blank=True)
+
+
+@receiver(pre_save, sender=Task)
+def CreateTaskHistory(sender, instance, **kwargs):
+    old_task = Task.objects.get(pk=instance.id)
+    # print("Old: ", old_task.status)
+    # print("New: ", instance.status)
+    if old_task.status != instance.status:
+        TaskHistory.objects.create(
+            old_status=old_task.status, new_status=instance.status, task=instance
+        ).save()
+        print("Created TaskHistory Record!")

@@ -13,6 +13,7 @@ from django_filters.rest_framework import (
     FilterSet,
     CharFilter,
     ChoiceFilter,
+    BooleanFilter,
 )
 from tasks.models import STATUS_CHOICES
 
@@ -34,6 +35,8 @@ class TaskSerializer(ModelSerializer):
 class TaskFilter(FilterSet):
     title = CharFilter(lookup_expr="icontains")
     status = ChoiceFilter(choices=STATUS_CHOICES)
+    # * https://django-filter.readthedocs.io/en/stable/guide/tips.html#solution-1-using-a-booleanfilter-with-isnull
+    completed = BooleanFilter()
 
 
 class TaskViewSet(ModelViewSet):
