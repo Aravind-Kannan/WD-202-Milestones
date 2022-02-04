@@ -91,7 +91,7 @@ class TaskCreateForm(ModelForm):
     # ? Meta data for `TaskCreateForm` provided inside
     class Meta:
         model = Task
-        fields = ["title", "description", "completed", "priority"]
+        fields = ["title", "description", "completed", "priority", "status"]
 
 
 # ! CRUD with Task Model
