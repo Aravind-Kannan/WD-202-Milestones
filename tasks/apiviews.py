@@ -1,7 +1,7 @@
 from dataclasses import field
 from django.views import View
 
-from tasks.models import Task
+from tasks.models import Task, TaskHistory
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.serializers import ModelSerializer
@@ -14,8 +14,11 @@ from django_filters.rest_framework import (
     CharFilter,
     ChoiceFilter,
     BooleanFilter,
+    DateFilter,
 )
 from tasks.models import STATUS_CHOICES
+from rest_framework import mixins
+from rest_framework.viewsets import GenericViewSet
 
 
 class UserSerializer(ModelSerializer):
@@ -53,3 +56,40 @@ class TaskViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
+class TaskHistorySerializer(ModelSerializer):
+    task = TaskSerializer(read_only=True)
+
+    class Meta:
+        model = TaskHistory
+        fields = ["id", "old_status", "new_status", "updated_date", "task"]
+
+
+class TaskHistoryFilter(FilterSet):
+    old_status = ChoiceFilter(choices=STATUS_CHOICES)
+    new_status = ChoiceFilter(choices=STATUS_CHOICES)
+    # * https://django-filter.readthedocs.io/en/stable/ref/filters.html#method
+    updated_date = DateFilter(method="filter_using_date")
+
+    def filter_using_date(self, queryset, name, value):
+        return queryset.filter(
+            updated_date__year=value.year,
+            updated_date__month=value.month,
+            updated_date__day=value.day,
+        )
+
+
+class TaskHistoryViewSet(
+    mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet
+):
+    queryset = TaskHistory.objects.all()
+    serializer_class = TaskHistorySerializer
+
+    permission_classes = (IsAuthenticated,)
+
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TaskHistoryFilter
+
+    def get_queryset(self):
+        return TaskHistory.objects.filter(task=self.kwargs["task_pk"])
