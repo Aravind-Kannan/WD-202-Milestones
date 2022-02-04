@@ -43,7 +43,7 @@ class TaskViewSet(ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
 
-    permssion_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated,)
 
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TaskFilter
