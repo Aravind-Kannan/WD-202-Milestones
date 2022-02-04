@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     # Result of command: `python manage.py startapp tasks`
     # * Manually added to list the app in the django project, `task_manager`
     "tasks",
+    "rest_framework",
+    "django_filters",
 ]
 
 MIDDLEWARE = [

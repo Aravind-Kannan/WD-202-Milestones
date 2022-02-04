@@ -1,3 +1,4 @@
+# ! Chrome: Inserts trailing slash before requesting the Django Server
 from django.contrib import admin
 from django.contrib.auth.views import LogoutView
 from django.urls import path
@@ -14,7 +15,13 @@ from tasks.views import (
     session_storage_view,
 )
 
-# ! Chrome: Inserts trailing slash before requesting the Django Server
+# * Django Rest Framework
+from rest_framework.routers import SimpleRouter
+from tasks.apiviews import TaskViewSet
+
+router = SimpleRouter()
+
+router.register("api/task", TaskViewSet)
 
 urlpatterns = [
     # ! Admin
@@ -35,4 +42,4 @@ urlpatterns = [
     path("user/logout/", LogoutView.as_view()),
     # ! Additional
     path("sessiontest/", session_storage_view),
-]
+] + router.urls
