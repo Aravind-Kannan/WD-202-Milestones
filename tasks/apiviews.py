@@ -92,7 +92,8 @@ class TaskHistoryViewSet(
     filterset_class = TaskHistoryFilter
 
     def get_queryset(self):
+        # append .query to view RAW SQL
         return TaskHistory.objects.filter(
-            task=self.kwargs["task_pk"],
-            task__in=Task.objects.filter(user=self.request.user).only("id").all(),
+            task__pk=self.kwargs["task_pk"],
+            task__user=self.request.user,
         )
