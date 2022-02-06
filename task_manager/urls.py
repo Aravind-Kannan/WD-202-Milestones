@@ -1,7 +1,9 @@
 # ! Chrome: Inserts trailing slash before requesting the Django Server
 from django.contrib import admin
 from django.contrib.auth.views import LogoutView
+from django.http import HttpResponse
 from django.urls import path
+from tasks.tasks import test_background_jobs
 from tasks.views import (
     GenericAllTaskView,
     GenericCompletedTaskView,
@@ -26,6 +28,13 @@ router.register("api/v1/task", TaskViewSet)
 task_router = routers.NestedSimpleRouter(router, "api/v1/task", lookup="task")
 task_router.register("history", TaskHistoryViewSet)
 
+
+# ! Testing out: Celery background job feature [Making synchronous to asynchronous]
+def test_bg(request):
+    test_background_jobs.delay()
+    return HttpResponse("All Good Here")
+
+
 urlpatterns = (
     [
         # ! Admin
@@ -46,6 +55,7 @@ urlpatterns = (
         path("user/logout/", LogoutView.as_view()),
         # ! Additional
         path("sessiontest/", session_storage_view),
+        path("test/celery/", test_bg),
     ]
     + router.urls
     + task_router.urls
