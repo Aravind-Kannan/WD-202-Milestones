@@ -52,6 +52,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # * Tried: Custom Middleware
+    # "tasks.middlware.CustomMiddleware",
 ]
 
 ROOT_URLCONF = "task_manager.urls"
@@ -136,3 +138,12 @@ LOGIN_REDIRECT_URL = "/tasks"
 LOGIN_URL = "/user/login"
 # * On successful logout, 'exiting page' for every user
 LOGOUT_REDIRECT_URL = "/user/login"
+
+# * Install Celery and Redis:
+# * To deal with requests not based on HTTP requests and to process background jobs asynchronously
+# * pip install celery==4.4.7 redis
+BROKER_URL = "redis://localhost:6379"
+CELERY_RESULT_BACKEND = "redis://localhost:6379"
+
+# * Setting console as default email backend
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
