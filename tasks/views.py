@@ -10,12 +10,26 @@ from django.views.generic import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
-from tasks.models import Task
+from tasks.models import Task, User
+
+
+class UserForm(UserCreationForm):
+    """Provide a view for creating users with only the requisite fields."""
+
+    class Meta:
+        model = User
+        # Note that password is taken care of for us by auth's UserCreationForm.
+        fields = ("username", "email")
+
+    def __init__(self, *args, **kwargs):
+        super(UserForm, self).__init__(*args, **kwargs)
+        self.fields["email"].required = True
+
 
 # ! User Views
 # * Traditional Signup Page: Form consists of `username`, `password` and `confirm password` to create a new user in the `task_manager`
 class UserCreateView(CreateView):
-    form_class = UserCreationForm
+    form_class = UserForm
     template_name = "user/signup.html"
     success_url = "/user/login"
 

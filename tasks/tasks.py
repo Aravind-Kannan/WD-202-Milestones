@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from celery.decorators import periodic_task
 from django.core.mail import send_mail
-from tasks.models import Task, User
+from tasks.models import Task, User, STATUS_CHOICES
 from task_manager.celery import app
 
 
@@ -12,7 +12,9 @@ from task_manager.celery import app
 def send_email_reminder():
     print("Starting to process Emails")
     for user in User.objects.all():
-        pending_qs = Task.objects.filter(user=user, completed=False, deleted=False)
+        pending_qs = Task.objects.filter(
+            user=user, status=STATUS_CHOICES[0][0], deleted=False
+        )
         email_content = f"You have {pending_qs.count()} Pending Tasks"
         send_mail(
             "Pending Tasks from Tasks Manager",
@@ -20,7 +22,7 @@ def send_email_reminder():
             "tasks@task_manager.org",
             [user.email],
         )
-        print(f"Completed Processing User {user.id}")
+        print(f"Completed Processing User {user.id} to user email: {user.email}")
 
 
 @app.task
