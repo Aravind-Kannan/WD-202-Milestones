@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 # For signals
-from django.db.models.signals import pre_save
+from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 
 import pytz
@@ -46,7 +46,47 @@ class TaskHistory(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, null=True, blank=True)
 
 
+class EmailTaskReport(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    send_time = models.TimeField(auto_now=True)
+    time_zone = models.CharField(max_length=32, choices=TIMEZONES, default="UTC")
+    subject = models.CharField(max_length=50)
+    content = models.TextField(max_length=500)
+    sent = models.BooleanField(default=False)
+
+
+@receiver(post_save, sender=User)
+def CreateEmailTaskReport(sender, instance, **kwargs):
+    try:
+        EmailTaskReport.objects.get(user=instance)
+    except:
+        EmailTaskReport.objects.create(
+            user=instance,
+            subject=instance.username + "'s report",
+            content="Default Content",
+        )
+
+
 @receiver(pre_save, sender=Task)
+@receiver(post_save, sender=Task)
+def UpdateEmailTaskReport(sender, instance, **kwargs):
+    try:
+        report = EmailTaskReport.objects.get(user=instance.user)
+        all_tasks = Task.objects.filter(deleted=False, user=instance.user.id)
+        content = "Task report:\n\n\n"
+        for i in range(len(STATUS_CHOICES) - 1):
+            tasks = all_tasks.filter(status=STATUS_CHOICES[i][0])
+            content += f"{STATUS_CHOICES[i][0].title()} :  {str(tasks.count())}\n"
+            for i in range(len(tasks)):
+                content += f"{i + 1}. {tasks[i]}\n"
+            content += "\n\n"
+        report.content = content
+        report.save()
+        print("Updated EmailTaskReport Record!")
+    except:
+        print("EmailTaskReport not found!")
+
+
 def CreateTaskHistory(sender, instance, **kwargs):
     try:
         old_task = Task.objects.get(pk=instance.id)

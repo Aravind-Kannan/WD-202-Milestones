@@ -1,28 +1,29 @@
 # Celery - Tasks
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from celery.decorators import periodic_task
 from django.core.mail import send_mail
-from tasks.models import Task, User, STATUS_CHOICES
+from tasks.models import Task, User, STATUS_CHOICES, EmailTaskReport
 from task_manager.celery import app
 
 
 @periodic_task(run_every=timedelta(seconds=10))
 def send_email_reminder():
     print("Starting to process Emails")
-    for user in User.objects.all():
-        pending_qs = Task.objects.filter(
-            user=user, status=STATUS_CHOICES[0][0], deleted=False
-        )
-        email_content = f"You have {pending_qs.count()} Pending Tasks"
+    for email_report in EmailTaskReport.objects.filter(
+        sent=False, send_time__lte=datetime.utcnow()
+    ):
+        user = User.objects.get(id=email_report.user.id)
         send_mail(
-            "Pending Tasks from Tasks Manager",
-            email_content,
+            email_report.subject,
+            email_report.content,
             "tasks@task_manager.org",
             [user.email],
         )
         print(f"Completed Processing User {user.id} to user email: {user.email}")
+        # email_report.send = True
+        email_report.save()
 
 
 @app.task
