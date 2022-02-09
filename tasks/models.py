@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.db import models
 
 from django.contrib.auth.models import User
@@ -6,7 +7,9 @@ from django.contrib.auth.models import User
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 
+import pytz
 
+TIMEZONES = tuple(zip(pytz.all_timezones, pytz.all_timezones))
 STATUS_CHOICES = (
     ("PENDING", "PENDING"),
     ("IN_PROGRESS", "IN_PROGRESS"),
@@ -45,11 +48,12 @@ class TaskHistory(models.Model):
 
 @receiver(pre_save, sender=Task)
 def CreateTaskHistory(sender, instance, **kwargs):
-    old_task = Task.objects.get(pk=instance.id)
-    # print("Old: ", old_task.status)
-    # print("New: ", instance.status)
-    if old_task.status != instance.status:
-        TaskHistory.objects.create(
-            old_status=old_task.status, new_status=instance.status, task=instance
-        ).save()
-        print("Created TaskHistory Record!")
+    try:
+        old_task = Task.objects.get(pk=instance.id)
+        if old_task.status != instance.status:
+            TaskHistory.objects.create(
+                old_status=old_task.status, new_status=instance.status, task=instance
+            ).save()
+            print("Created TaskHistory Record!")
+    except:
+        print("Task not found!")
