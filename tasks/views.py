@@ -10,7 +10,7 @@ from django.views.generic import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 
-from tasks.models import Task, User
+from tasks.models import EmailTaskReport, Task, User
 
 
 class UserForm(UserCreationForm):
@@ -209,3 +209,18 @@ class GenericCompletedTaskView(TaskCounterMixin, LoginRequiredMixin, ListView):
         return Task.objects.filter(
             completed=True, deleted=False, user=self.request.user
         ).order_by("priority")
+
+
+class EmailTaskReportForm(ModelForm):
+    class Meta:
+        model = EmailTaskReport
+        fields = ["send_time", "time_zone"]
+
+
+class GenericEmailTaskReportUpdateView(LoginRequiredMixin, UpdateView):
+    form_class = EmailTaskReportForm
+    template_name = "mail_settings.html"
+    success_url = "/all-tasks"
+
+    def get_queryset(self):
+        return EmailTaskReport.objects.filter(user=self.request.user)

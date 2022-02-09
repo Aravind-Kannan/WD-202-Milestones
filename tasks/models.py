@@ -31,7 +31,7 @@ class Task(models.Model):
     )
 
     def __str__(self):
-        return self.title
+        return f"{self.title} [Priority: {self.priority}]"
 
 
 class TaskHistory(models.Model):
@@ -48,7 +48,7 @@ class TaskHistory(models.Model):
 
 class EmailTaskReport(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    send_time = models.TimeField(auto_now=True)
+    send_time = models.TimeField(null=True)
     time_zone = models.CharField(max_length=32, choices=TIMEZONES, default="UTC")
     subject = models.CharField(max_length=50)
     content = models.TextField(max_length=500)
@@ -67,7 +67,6 @@ def CreateEmailTaskReport(sender, instance, **kwargs):
         )
 
 
-@receiver(pre_save, sender=Task)
 @receiver(post_save, sender=Task)
 def UpdateEmailTaskReport(sender, instance, **kwargs):
     try:
@@ -87,6 +86,7 @@ def UpdateEmailTaskReport(sender, instance, **kwargs):
         print("EmailTaskReport not found!")
 
 
+@receiver(pre_save, sender=Task)
 def CreateTaskHistory(sender, instance, **kwargs):
     try:
         old_task = Task.objects.get(pk=instance.id)

@@ -3,7 +3,6 @@ from django.contrib import admin
 from django.contrib.auth.views import LogoutView
 from django.http import HttpResponse
 from django.urls import path
-from tasks.tasks import test_background_jobs
 from tasks.views import (
     GenericAllTaskView,
     GenericCompletedTaskView,
@@ -12,6 +11,7 @@ from tasks.views import (
     GenericTaskDeleteView,
     GenericTaskDetailView,
     GenericTaskUpdateView,
+    GenericEmailTaskReportUpdateView,
     UserCreateView,
     UserLoginView,
     session_storage_view,
@@ -27,13 +27,6 @@ router.register("api/v1/task", TaskViewSet)
 
 task_router = routers.NestedSimpleRouter(router, "api/v1/task", lookup="task")
 task_router.register("history", TaskHistoryViewSet)
-
-
-# ! Testing out: Celery background job feature [Making synchronous to asynchronous]
-def test_bg(request):
-    test_background_jobs.delay()
-    return HttpResponse("All Good Here")
-
 
 urlpatterns = (
     [
@@ -55,7 +48,7 @@ urlpatterns = (
         path("user/logout/", LogoutView.as_view()),
         # ! Additional
         path("sessiontest/", session_storage_view),
-        path("test/celery/", test_bg),
+        path("mail-settings/<pk>/", GenericEmailTaskReportUpdateView.as_view()),
     ]
     + router.urls
     + task_router.urls
