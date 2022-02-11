@@ -1,9 +1,7 @@
 # Celery - Tasks
-import time
 from datetime import datetime, timedelta
 
 from celery.decorators import periodic_task
-
 from django.core.mail import send_mail
 from pytz import timezone
 from task_manager.celery import app

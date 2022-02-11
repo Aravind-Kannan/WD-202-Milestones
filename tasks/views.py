@@ -1,11 +1,9 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import LoginView
 from django.db import transaction
 from django.forms import ModelForm, ValidationError
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
-from django.views import View
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView

@@ -1,13 +1,10 @@
-from datetime import datetime
+import pytz
+from django.contrib.auth.models import User
 from django.db import models
 
-from django.contrib.auth.models import User
-
 # For signals
-from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-
-import pytz
 
 TIMEZONES = tuple(zip(pytz.all_timezones, pytz.all_timezones))
 STATUS_CHOICES = (

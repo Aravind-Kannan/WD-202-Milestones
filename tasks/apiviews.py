@@ -1,24 +1,18 @@
-from dataclasses import field
-from django.views import View
-
-from tasks.models import Task, TaskHistory
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.serializers import ModelSerializer
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
 from django_filters.rest_framework import (
-    DjangoFilterBackend,
-    FilterSet,
+    BooleanFilter,
     CharFilter,
     ChoiceFilter,
-    BooleanFilter,
     DateFilter,
+    DjangoFilterBackend,
+    FilterSet,
 )
-from tasks.models import STATUS_CHOICES
-from rest_framework import mixins
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.serializers import ModelSerializer
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
+
+from tasks.models import STATUS_CHOICES, Task, TaskHistory
 
 
 class UserSerializer(ModelSerializer):
@@ -80,9 +74,7 @@ class TaskHistoryFilter(FilterSet):
         )
 
 
-class TaskHistoryViewSet(
-    mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet
-):
+class TaskHistoryViewSet(RetrieveModelMixin, ListModelMixin, GenericViewSet):
     queryset = TaskHistory.objects.all()
     serializer_class = TaskHistorySerializer
 

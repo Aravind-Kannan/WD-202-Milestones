@@ -1,26 +1,24 @@
 # ! Chrome: Inserts trailing slash before requesting the Django Server
 from django.contrib import admin
 from django.contrib.auth.views import LogoutView
-from django.http import HttpResponse
 from django.urls import path
+
+# * Django Rest Framework
+from rest_framework_nested import routers
+from tasks.apiviews import TaskHistoryViewSet, TaskViewSet
 from tasks.views import (
     GenericAllTaskView,
     GenericCompletedTaskView,
+    GenericEmailTaskReportUpdateView,
     GenericPendingTaskView,
     GenericTaskCreateView,
     GenericTaskDeleteView,
     GenericTaskDetailView,
     GenericTaskUpdateView,
-    GenericEmailTaskReportUpdateView,
     UserCreateView,
     UserLoginView,
     session_storage_view,
 )
-
-# * Django Rest Framework
-from rest_framework.routers import SimpleRouter
-from tasks.apiviews import TaskViewSet, TaskHistoryViewSet
-from rest_framework_nested import routers
 
 router = routers.SimpleRouter()
 router.register("api/v1/task", TaskViewSet)
