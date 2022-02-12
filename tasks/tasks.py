@@ -11,12 +11,11 @@ from task_manager.celery import app
 from tasks.models import STATUS_CHOICES, EmailTaskReport, Task, User
 
 
-@periodic_task(run_every=timedelta(seconds=10))
+@periodic_task(run_every=timedelta(seconds=300))
 def send_email_reminder():
     print("Starting to process Emails")
     now_utc = datetime.now(timezone("UTC"))
-    for e in EmailTaskReport.objects.all():
-        print(e.user, e.send_time)
+
     for email_report in EmailTaskReport.objects.filter(send_time__lt=now_utc):
         user = User.objects.get(id=email_report.user.id)
         send_mail(
