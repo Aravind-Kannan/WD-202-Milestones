@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
@@ -9,6 +11,7 @@ from django.views import View
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
+from pytz import timezone
 
 from tasks.models import EmailTaskReport, Task, User
 
@@ -215,6 +218,39 @@ class EmailTaskReportForm(ModelForm):
     class Meta:
         model = EmailTaskReport
         fields = ["send_time", "time_zone"]
+
+    def clean(self):
+        # * Render Form: Convert UTC to Local
+        send_time = self.cleaned_data["send_time"]
+        time_zone = self.cleaned_data["time_zone"]
+        send_time = send_time.replace(tzinfo=None)
+        local_time = timezone(time_zone).localize(send_time)
+        print({"send_time": send_time, "time_zone": time_zone})
+        send_time = local_time.astimezone(timezone("UTC"))
+        print("local_time:", self.cleaned_data["send_time"], "\nsend time:", send_time)
+        print("UTC:", datetime.utcnow())
+        return {"send_time": send_time, "time_zone": time_zone}
+
+    def __init__(self, *args, **kwargs):
+        super(EmailTaskReportForm, self).__init__(*args, **kwargs)
+
+        # * Render Form: Convert UTC to Local
+        send_time = str(self.instance.send_time).split("+")[0]
+        if str(self.instance.send_time).find(".") != -1:
+            time_str = datetime.strptime(send_time, "%Y-%m-%d %H:%M:%S.%f")
+        else:
+            time_str = datetime.strptime(send_time, "%Y-%m-%d %H:%M:%S")
+
+        local_time = time_str.astimezone(timezone(self.instance.time_zone))
+        print(time_str, local_time)
+        self.instance.send_time = str(local_time)
+        # self.fields["send_time"] = local_time
+        # print(utc_time, local_time)
+        # self.instance.send_time = local_time.strftime("%H:%M:%S")
+        # self.instance.time_zone = "UTC"
+
+        kwargs["instance"] = self.instance
+        super(EmailTaskReportForm, self).__init__(*args, **kwargs)
 
 
 class GenericEmailTaskReportUpdateView(LoginRequiredMixin, UpdateView):

@@ -1,13 +1,13 @@
 from datetime import datetime
-from django.db import models
-
-from django.contrib.auth.models import User
-
-# For signals
-from django.db.models.signals import pre_save, post_save
-from django.dispatch import receiver
 
 import pytz
+from django.contrib.auth.models import User
+from django.db import models
+
+# For signals
+from django.db.models.signals import post_save, pre_save
+from django.dispatch import receiver
+from django.utils import timezone
 
 TIMEZONES = tuple(zip(pytz.all_timezones, pytz.all_timezones))
 STATUS_CHOICES = (
@@ -48,11 +48,10 @@ class TaskHistory(models.Model):
 
 class EmailTaskReport(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    send_time = models.TimeField(null=True)
+    send_time = models.DateTimeField(default=timezone.now, editable=True)
     time_zone = models.CharField(max_length=32, choices=TIMEZONES, default="UTC")
     subject = models.CharField(max_length=50)
     content = models.TextField(max_length=500)
-    sent = models.BooleanField(default=False)
 
 
 @receiver(post_save, sender=User)
