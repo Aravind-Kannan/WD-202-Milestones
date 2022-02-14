@@ -1,3 +1,4 @@
+from datetime import datetime
 from multiprocessing.connection import wait
 from time import sleep
 from django.contrib.auth.models import AnonymousUser
@@ -6,8 +7,10 @@ from rest_framework import status
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
-from tasks.models import STATUS_CHOICES, Task, User
+from tasks.models import STATUS_CHOICES, EmailTaskReport, Task, User
+from tasks.tasks import send_email_reminder
 from tasks.views import (
+    EmailTaskReportForm,
     GenericAllTaskView,
     GenericCompletedTaskView,
     GenericPendingTaskView,
@@ -164,6 +167,42 @@ class FormTestCases(TestCase):
         )
 
         self.assertEqual(form.errors["title"], ["Data too small"])
+
+    def test_email_form(self):
+        form = EmailTaskReportForm(
+            data={"send_time": "2022-02-14 07:25:00+00:00", "time_zone": "UTC"}
+        )
+
+        # self.client.login(username="bruce_wayne", password="i_am_batman")
+        # response = self.client.post(
+        #     f"/mail-settings/{self.user.id}/",
+        #     data={"send_time": "2022-02-14 07:25:00+00:00", "time_zone": "UTC"},
+        # )
+        # self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+        self.assertTrue(form.is_valid())
+
+
+class CeleryTestCases(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create(username="bruce_wayne", email="bruce@wayne.org")
+        self.user.set_password("i_am_batman")
+        self.user.save()
+
+    def test_send_email_reminder(self):
+        EmailTaskReport.objects.create(
+            user=self.user, send_time=datetime.now(), time_zone="UTC"
+        )
+        Task.objects.create(
+            title="Buy Milk!",
+            description="From Milk shop",
+            priority=10,
+            completed=False,
+            status=STATUS_CHOICES[0][0],
+            user=self.user,
+        ).save()
+        send_email_reminder.apply()
 
 
 # Trying Selenium
