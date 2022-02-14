@@ -53,12 +53,12 @@ class EmailTaskReport(models.Model):
 
 
 @receiver(post_save, sender=User)
-def CreateEmailTaskReport(sender, instance, **kwargs):
+def create_EmailTaskReport(sender, instance, **kwargs):
     EmailTaskReport.objects.get_or_create(user=instance)
 
 
 @receiver(pre_save, sender=Task)
-def CreateTaskHistory(sender, instance, **kwargs):
+def create_TaskHistory(sender, instance, **kwargs):
     try:
         old_task = Task.objects.get(pk=instance.id)
         if old_task.status != instance.status:

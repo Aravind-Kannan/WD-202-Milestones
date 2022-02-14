@@ -72,7 +72,7 @@ class TaskCounterMixin:
 
 
 # * Priority Casacade Logic (Database Transaction Function): Lifted up for model logic in `GenericTaskCreateView` and `GenericTaskUpdateView`
-def priorityCascadeLogic(form, user):
+def priority_cascade_logic(form, user):
     conflicting_priority = form.cleaned_data["priority"]
     tasks = list()
     with transaction.atomic():
@@ -122,7 +122,7 @@ class GenericTaskCreateView(CreateView):
     def form_valid(self, form):
         """If the form is valid, save the associated model."""
         if form.cleaned_data["completed"] == False:
-            priorityCascadeLogic(form, self.request.user)
+            priority_cascade_logic(form, self.request.user)
 
         # * Save newly created object
         self.object = form.save()
@@ -150,7 +150,7 @@ class GenericTaskUpdateView(AuthorisedTaskManager, UpdateView):
                 and form.cleaned_data["completed"] == False
             )
         ):
-            priorityCascadeLogic(form, self.request.user)
+            priority_cascade_logic(form, self.request.user)
 
         # * Save updated object
         self.object = form.save()
